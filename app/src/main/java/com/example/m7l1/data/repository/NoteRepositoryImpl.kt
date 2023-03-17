@@ -1,5 +1,6 @@
 package com.example.m7l1.data.repository
 
+import com.example.m7l1.data.base.BaseRepository
 import com.example.m7l1.data.local.NoteDao
 import com.example.m7l1.data.toNote
 import com.example.m7l1.data.totNoteEntity
@@ -15,44 +16,25 @@ import javax.inject.Inject
 
 class NoteRepositoryImpl @Inject constructor(
     private val noteDao: NoteDao
-) : NoteRepository {
-    override fun createNote(note: Note): Flow<ResultStatus<Unit>> = flow{
-        emit(ResultStatus.Loading())
-        try {
-            val data = noteDao.createNote(note.totNoteEntity())
-            emit(ResultStatus.Success(data))
-        }catch (e:IOException){
-            emit(ResultStatus.Error(e.message))
-        }
-    }.flowOn(Dispatchers.IO)
+) : NoteRepository,BaseRepository() {
 
-    override fun getAllNotes(): Flow<ResultStatus<List<Note>>> = flow {
-        emit(ResultStatus.Loading())
-        try {
-            val data = noteDao.getAllNotes().map { it.toNote() }
-            emit(ResultStatus.Success(data))
-        }catch (e:IOException){
-            emit(ResultStatus.Error(e.message))
-        }
-    }.flowOn(Dispatchers.IO)
 
-    override fun editNote(note: Note): Flow<ResultStatus<Unit>> = flow{
-        emit(ResultStatus.Loading())
-        try {
-            val data = noteDao.editNote(note.totNoteEntity())
-            emit(ResultStatus.Success(data))
-        }catch (e:IOException){
-            emit(ResultStatus.Error(e.message))
-        }
-    }.flowOn(Dispatchers.IO)
+    override fun createNote(note: Note) = doRequest {
+        noteDao.createNote(note.totNoteEntity())
+    }
 
-    override fun deleteNote(note: Note): Flow<ResultStatus<Unit>> = flow{
-        emit(ResultStatus.Loading())
-        try {
-            val data = noteDao.deleteNote(note.totNoteEntity())
-            emit(ResultStatus.Success(data))
-        }catch (e:IOException){
-            emit(ResultStatus.Error(e.message))
-        }
-    }.flowOn(Dispatchers.IO)
+
+    override fun getAllNotes(): Flow<ResultStatus<List<Note>>> = doRequest {
+        noteDao.getAllNotes().map { it.toNote() }
+    }
+
+
+    override fun editNote(note: Note) = doRequest {
+        noteDao.editNote(note.totNoteEntity())
+    }
+
+
+    override fun deleteNote(note: Note) = doRequest {
+        noteDao.deleteNote(note.totNoteEntity())
+    }
 }
