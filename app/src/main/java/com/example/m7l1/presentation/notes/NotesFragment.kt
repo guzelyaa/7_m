@@ -1,46 +1,83 @@
 package com.example.m7l1.presentation.notes
 
-import androidx.lifecycle.ViewModelProvider
-import android.os.Bundle
-import androidx.fragment.app.Fragment
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+
+import androidx.core.os.bundleOf
+import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import com.example.m7l1.R
 import com.example.m7l1.databinding.FragmentNotesBinding
-import kotlinx.coroutines.launch
+import com.example.m7l1.domain.model.Note
+import com.example.m7l1.presentation.base.BaseFragment
+import com.example.m7l1.presentation.extension.showToast
+import dagger.hilt.android.AndroidEntryPoint
 
-class NotesFragment : Fragment(R.layout.fragment_notes) {
+@AndroidEntryPoint
+class NotesFragment : BaseFragment<NotesViewModel, FragmentNotesBinding>(FragmentNotesBinding::inflate) {
 
-    private val viewModel: NotesViewModel by viewModels()
-    private lateinit var binding: FragmentNotesBinding
+    override val vm: NotesViewModel by viewModels()
+    private val adapter by lazy { NotesAdapter(this::onItemClick, this::onLongItemClick) }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        binding = FragmentNotesBinding.bind(view)
+    private val list = mutableListOf<Note>()
 
-        listeners()
+    private fun onItemClick(note: Note) {
+        val bundle = bundleOf().apply {
+            putSerializable(ARG_ADD_EDIT, note)
+        }
+        findNavController().navigate(R.id.action_notesFragment_to_addFragment, bundle)
     }
 
-    private fun listeners() {
-        viewLifecycleOwner.lifecycleScope.launch {
+    private fun onLongItemClick(note: Note) {
+        vm.delete(note)
+    }
 
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.noteState.collect {
-                    when(it){
-                        is UiState.Empty ->{}
-                        is UiState.Error ->{}//toast
-                        is UiState.Loading ->{}//progressBar
-                        is UiState.Success ->{}//передать список адаптеру
-                    }
-                }
-            }
+    override fun initialize() {
+        binding.notesRv.adapter = adapter
+    }
+
+    override fun listeners() {
+        binding.createBtn.setOnClickListener {
+            findNavController().navigate(R.id.action_notesFragment_to_addFragment)
         }
     }
 
+    override fun setupRequest() {
+        vm.noteState.collectState(onLoading = {
+            binding.progressBar.isVisible = true
+        }, onError = {
+            binding.progressBar.isVisible = false
+            showToast(it)
+        }, onSuccess = {
+            binding.progressBar.isVisible = false
+            adapter.updateList(it as MutableList<Note>)
+        })
 
+        vm.deleteNoteState.collectState(onLoading = {
+            binding.progressBar.isVisible = true
+        }, onError = {
+            binding.progressBar.isVisible = false
+            showToast(it)
+        }, onSuccess = {
+            binding.progressBar.isVisible = false
+            showToast("Note is successfully deleted!")
+            adapter.delete()
+        })
+
+        vm.createNoteState.collectState(onLoading = {
+            binding.progressBar.isVisible = true
+        }, onError = {
+            binding.progressBar.isVisible = false
+        }, onSuccess = {
+            binding.progressBar.isVisible = false
+            //adapter.updateList(it as MutableList<Note>)
+
+        })
+
+    }
+
+
+
+    companion object{
+        const val ARG_ADD_EDIT = "edit_note"
+    }
 }

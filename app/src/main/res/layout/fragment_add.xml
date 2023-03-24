@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     tools:context=".presentation.add_note.AddFragment">
 
@@ -30,5 +31,15 @@
         android:layout_marginTop="16dp"
         android:backgroundTint="@color/purple_200"
         android:text="Save" />
+
+    <com.google.android.material.progressindicator.CircularProgressIndicator
+        android:id="@+id/progressBar"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_gravity="center"
+        android:progress="70"
+        android:visibility="gone"
+        app:indicatorColor="@color/black"
+        app:trackColor="@color/purple_200" />
 
 </LinearLayout>
